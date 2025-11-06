@@ -1,0 +1,173 @@
+<!--
+  Vorliyo: Freelance Platform - Owner Analytics Summary Page
+  File: owner-analytics-summary.html (ROOT FILE)
+  FIX: Ensured grid layouts are mobile-friendly (default to grid-cols-1)
+-->
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner - Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- Navbar (Owner) -->
+    <header class="bg-red-700 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+            <a href="owner-admin.html" class="text-3xl font-extrabold text-white tracking-tight">Vorliyo Admin</a>
+            <a href="owner-admin.html" class="text-white hover:text-red-200 flex items-center p-2 rounded-lg border border-red-300">
+                <span data-lucide="layout-dashboard" class="w-5 h-5 mr-1"></span> டாஷ்போர்டு
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 class="text-3xl font-extrabold text-gray-900 mb-8 flex items-center">
+             <span data-lucide="bar-chart-2" class="w-8 h-8 mr-2 text-red-700"></span> தளப் புள்ளிவிவரங்கள் சுருக்கம்
+        </h1>
+        
+        <p id="authMessage" class="text-red-600 font-semibold mb-4">
+             (Owner Login required - owner-admin.html வழியாக உள்நுழையவும்)
+        </p>
+        
+        <p id="loadingMessage" class="text-center text-lg text-indigo-500 font-semibold mb-4">தரவுகளைப் பெறுகிறது...</p>
+
+        <!-- FIX: Ensured grid starts with grid-cols-1 for mobile, then md:grid-cols-3 -->
+        <div id="analyticsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6 hidden">
+            
+            <!-- Cards (Layout already responsive but adding explicit grid-cols-1 for clarity) -->
+            <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-indigo-500">
+                <p class="text-sm font-medium text-gray-500">மொத்தப் பயனர்கள்</p>
+                <p class="text-4xl font-extrabold text-indigo-600 mt-1" id="totalUsers">0</p>
+            </div>
+            
+            <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
+                <p class="text-sm font-medium text-gray-500">மொத்த வேலைகள் (Jobs)</p>
+                <p class="text-4xl font-extrabold text-green-600 mt-1" id="totalJobs">0</p>
+            </div>
+            
+            <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-yellow-500">
+                <p class="text-sm font-medium text-gray-500">மொத்த சேவைகள் (Gigs)</p>
+                <p class="text-4xl font-extrabold text-yellow-600 mt-1" id="totalGigs">0</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-red-500">
+                <p class="text-sm font-medium text-gray-500">மொத்த முன்மொழிவுகள் (Proposals)</p>
+                <p class="text-4xl font-extrabold text-red-600 mt-1" id="totalProposals">0</p>
+            </div>
+            
+            <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-purple-500">
+                <p class="text-sm font-medium text-gray-500">சராசரி மதிப்பீடு</p>
+                <p class="text-4xl font-extrabold text-purple-600 mt-1" id="avgRating">0.0 / 5</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-gray-700">
+                <p class="text-sm font-medium text-gray-500">மொத்த கமிஷன் (Manual)</p>
+                <p class="text-4xl font-extrabold text-gray-700 mt-1" id="totalCommission">LKR 0.00</p>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Config (Please make sure this is your config!)
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyDD755-oGyx0hwrLykhF7m2k1uWFnLFMDQ",
+            authDomain: "vorliyo.firebaseapp.com",
+            projectId: "vorliyo",
+            storageBucket: "vorliyo.firebasestorage.app",
+            messagingSenderId: "480604417883",
+            appId: "1:480604417883:web:5b4926a2a1b21f3ae2747e",
+        };
+        
+        const firebaseConfig = FIREBASE_CONFIG;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'vorliyo-default-app-id';
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        const ADMIN_EMAIL = 'vorliyopro@gmail.com';
+        const COMMISSION_RATE = 0.10; // Default Commission Rate
+
+        // Firestore Path Helpers
+        const JOBS_COLLECTION = collection(db, 'artifacts', appId, 'public', 'data', 'jobs');
+        const SERVICES_COLLECTION = collection(db, 'artifacts', appId, 'public', 'data', 'services');
+        const PROPOSALS_COLLECTION = collection(db, 'artifacts', appId, 'public', 'data', 'proposals');
+        const RATINGS_COLLECTION = collection(db, 'artifacts', appId, 'public', 'data', 'ratings');
+        const TRANSACTIONS_COLLECTION = collection(db, 'artifacts', appId, 'owner', 'data', 'manual_transactions');
+        
+
+        // --- AUTH CHECK (Owner Only) ---
+        onAuthStateChanged(auth, (user) => {
+            if (!user || user.email !== ADMIN_EMAIL) {
+                if (window.location.href.includes('owner-analytics-summary.html')) {
+                    alert("Unauthorized access. Redirecting to Admin Login.");
+                    window.location.href = 'owner-admin.html';
+                }
+            } else {
+                 fetchAnalyticsData();
+            }
+        });
+
+        // --- ANALYTICS FETCHER ---
+        async function fetchAnalyticsData() {
+            try {
+                // 1. Fetch data counts
+                const [jobsSnap, gigsSnap, proposalsSnap, ratingsSnap, transactionsSnap] = await Promise.all([
+                    getDocs(query(JOBS_COLLECTION)),
+                    getDocs(query(SERVICES_COLLECTION)),
+                    getDocs(query(PROPOSALS_COLLECTION)),
+                    getDocs(query(RATINGS_COLLECTION)),
+                    getDocs(query(TRANSACTIONS_COLLECTION)),
+                ]);
+
+                // 2. Calculate Totals & Averages
+                let totalScore = 0;
+                ratingsSnap.forEach(doc => {
+                    totalScore += doc.data().score;
+                });
+                const avgRating = ratingsSnap.empty ? 0 : totalScore / ratingsSnap.size;
+
+                let totalCommissionAmount = 0;
+                transactionsSnap.forEach(doc => {
+                    totalCommissionAmount += doc.data().totalAmount * COMMISSION_RATE;
+                });
+                
+                // 3. User Count (Highly simplified, requires Firebase Auth Admin SDK for accuracy)
+                const totalUsers = 1; // Placeholder for Owner + 1 (You will manually update this in DB)
+
+                // 4. Render
+                document.getElementById('totalUsers').textContent = totalUsers;
+                document.getElementById('totalJobs').textContent = jobsSnap.size;
+                document.getElementById('totalGigs').textContent = gigsSnap.size;
+                document.getElementById('totalProposals').textContent = proposalsSnap.size;
+                document.getElementById('avgRating').textContent = `${avgRating.toFixed(1)} / 5`;
+                document.getElementById('totalCommission').textContent = `LKR ${totalCommissionAmount.toFixed(2).toLocaleString()}`;
+                
+                document.getElementById('loadingMessage').classList.add('hidden');
+                document.getElementById('analyticsGrid').classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Error fetching analytics:", error);
+                document.getElementById('loadingMessage').textContent = 'புள்ளிவிவரங்களைப் பெற முடியவில்லை.';
+            }
+        }
+        
+    </script>
+</body>
+  </html>
