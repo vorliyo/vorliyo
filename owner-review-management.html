@@ -1,0 +1,134 @@
+<!--
+  Vorliyo: Freelance Platform - Owner Review Management Page
+  File: owner-review-management.html (ROOT FILE)
+  FIX: Ensured layout is mobile-friendly.
+-->
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner - விமர்சனங்கள் மேலாண்மை</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- Navbar (Owner) -->
+    <header class="bg-red-700 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+            <a href="owner-admin.html" class="text-3xl font-extrabold text-white tracking-tight">Vorliyo Admin</a>
+            <a href="owner-admin.html" class="text-white hover:text-red-200 flex items-center p-2 rounded-lg border border-red-300">
+                <span data-lucide="layout-dashboard" class="w-5 h-5 mr-1"></span> டாஷ்போர்டு
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 class="text-3xl font-extrabold text-gray-900 mb-8 flex items-center">
+             <span data-lucide="star" class="w-8 h-8 mr-2 text-yellow-600"></span> விமர்சனங்கள் மற்றும் மதிப்பீடுகள்
+        </h1>
+        
+        <p id="authMessage" class="text-red-600 font-semibold mb-4">
+             (Owner Login required - owner-admin.html வழியாக உள்நுழையவும்)
+        </p>
+
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">அனைத்து வாடிக்கையாளர் விமர்சனங்கள்</h2>
+            <div id="reviewList" class="space-y-4">
+                 <p class="text-center text-gray-500">விமர்சனங்கள் ஏற்றப்படுகிறது...</p>
+            </div>
+        </div>
+        
+    </main>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Config (Please make sure this is your config!)
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyDD755-oGyx0hwrLykhF7m2k1uWFnLFMDQ",
+            authDomain: "vorliyo.firebaseapp.com",
+            projectId: "vorliyo",
+            storageBucket: "vorliyo.firebasestorage.app",
+            messagingSenderId: "480604417883",
+            appId: "1:480604417883:web:5b4926a2a1b21f3ae2747e",
+        };
+        
+        const firebaseConfig = FIREBASE_CONFIG;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'vorliyo-default-app-id';
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        const ADMIN_EMAIL = 'vorliyopro@gmail.com';
+        
+        // Firestore Path Helpers
+        const RATINGS_COLLECTION = collection(db, 'artifacts', appId, 'public', 'data', 'ratings');
+
+        // --- AUTH CHECK (Owner Only) ---
+        onAuthStateChanged(auth, (user) => {
+            if (!user || user.email !== ADMIN_EMAIL) {
+                if (window.location.href.includes('owner-review-management.html')) {
+                    alert("Unauthorized access. Redirecting to Admin Login.");
+                    window.location.href = 'owner-admin.html';
+                }
+            } else {
+                 document.getElementById('authMessage').classList.add('hidden');
+                 listenToReviews();
+            }
+        });
+
+        // --- REVIEW LISTENER ---
+        function listenToReviews() {
+            const list = document.getElementById('reviewList');
+            
+            onSnapshot(query(RATINGS_COLLECTION), (snapshot) => {
+                const reviews = [];
+                snapshot.forEach((doc) => {
+                    reviews.push({ id: doc.id, ...doc.data() });
+                });
+                renderReviews(reviews, list);
+            }, (error) => { console.error("Error fetching reviews:", error); });
+        }
+        
+        function renderReviews(reviews, list) {
+            if (reviews.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-500">இதுவரை எந்த மதிப்பீடுகளும் சமர்ப்பிக்கப்படவில்லை.</p>';
+                return;
+            }
+            
+            list.innerHTML = reviews.map(r => {
+                const date = r.createdAt ? new Date(r.createdAt.toDate()).toLocaleDateString() : 'N/A';
+                return `
+                    <div class="bg-white p-4 rounded-xl shadow-md border-l-4 border-yellow-500">
+                        <div class="flex justify-between items-start">
+                             <h4 class="text-lg font-bold text-gray-900">${r.freelancerId} -க்கு மதிப்பீடு</h4>
+                             <span class="text-2xl font-extrabold text-yellow-600">${r.score} &#9733;</span>
+                        </div>
+                        <p class="text-sm text-gray-600">**விமர்சனம்:** ${r.review}</p>
+                        <p class="text-xs text-gray-500 mt-2">**வாடிக்கையாளர்:** ${r.clientName} | **வேலை ID:** ${r.jobId.substring(0, 8)}... | ${date}</p>
+                        
+                        <!-- Manual Action Placeholder -->
+                        <button onclick="alert('Manual Review ID: ${r.id}')" class="mt-2 text-xs bg-red-100 text-red-600 p-1 rounded hover:bg-red-200">
+                            Manual Review / Hide
+                        </button>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+        
+    </script>
+</body>
+</html>
