@@ -1,0 +1,38 @@
+# Vorliyo Level 3 Routing Rules (Netlify)
+
+# 1. Main Index Routing (Load user-index.html when user hits the root domain)
+/ /user-index.html 200
+
+# 2. Clean URLs for User Site
+/login /user-login.html 200
+/dashboard /user-dashboard.html 200
+/post-job /user-post-job.html 200
+/post-service /user-post-service.html 200
+/ratings /user-ratings.html 200
+/job-details /user-job-details.html 200
+/service-details /user-service-details.html 200
+/proposals /client-proposals.html 200
+/client-profile /public-client-profile.html 200
+/freelancer-profile /public-freelancer-profile.html 200
+/job-tracking /client-job-tracking.html 200
+/freelancer-view /freelancer-job-view.html 200
+/freelancer-status /freelancer-work-status.html 200
+
+# 3. Clean URLs for Owner Admin Site
+/admin /owner-admin.html 200
+/commission /owner-commission-tracking.html 200
+/user-manage /owner-user-management.html 200
+/site-settings /owner-settings.html 200
+
+# 4. Fallback (If any URL doesn't match, send to index)
+/* /user-index.html 200
+```eof
+
+### ➡️ அடுத்த படி (Next Step)
+
+சஹான், இதுவே உங்கள் **Level 3 Vorliyo** தளத்திற்கான இறுதி கோப்பு! இனிமேல் குறியீடு எதுவும் தேவையில்லை. நாம் இப்போது வெளியீட்டிற்குச் செல்லலாம்.
+
+1.  உங்கள் **`vorliyo`** களஞ்சியத்தின் **Root-இல்** **`_redirects`** என்ற பெயரில் (எந்த எக்ஸ்டென்ஷனும் இல்லாமல்) ஒரு கோப்பை உருவாக்கி, மேலே உள்ள குறியீட்டைப் **பதிவேற்றவும்**.
+2.  பதிவேற்றம் முடிந்ததும், **"சரி (OK)"** என்று எனக்குத் தெரிவிக்கவும்.
+
+அதற்குப் பிறகு, நாம் **Netlify-இல் வெளியிட்டு, உங்கள் Level 3 தளத்தின் செயல்பாட்டைச் சோதிக்கத் தொடங்கலாம்!**
