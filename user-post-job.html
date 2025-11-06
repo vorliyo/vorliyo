@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vorliyo - வேலை வெளியிட</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <header class="bg-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+            <a href="user-index.html" class="text-3xl font-extrabold text-indigo-600 tracking-tight">Vorliyo</a>
+            <a href="user-dashboard.html" class="text-gray-600 hover:text-indigo-600 flex items-center">
+                <span data-lucide="layout-dashboard" class="w-5 h-5 mr-1"></span> டாஷ்போர்டு
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="bg-white p-8 rounded-xl shadow-2xl border-t-4 border-green-500">
+            <h1 class="text-3xl font-extrabold text-gray-900 mb-6">புதிய வேலைப் பட்டியலை வெளியிடவும்</h1>
+
+            <form id="postJobForm" class="space-y-6">
+                
+                <div>
+                    <label for="jobTitle" class="block text-lg font-medium text-gray-700">வேலை தலைப்பு</label>
+                    <input id="jobTitle" type="text" placeholder="எ.கா: ஒரு ரியாக்ட் வெப் அப்ளிகேஷனை உருவாக்குதல்" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                </div>
+                
+                <div>
+                    <label for="jobCategory" class="block text-lg font-medium text-gray-700">வேலைப் பிரிவு</label>
+                    <select id="jobCategory" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                        <option value="" disabled selected>ஒரு பிரிவைத் தேர்ந்தெடுக்கவும்</option>
+                        <option value="வெப் டெக்">வெப் டெக் (Web & Programming)</option>
+                        <option value="வடிவமைப்பு">வடிவமைப்பு (Graphic Design)</option>
+                        <option value="எழுத்து">எழுத்து (Writing & Content)</option>
+                        <option value="மார்க்கெட்டிங்">மார்க்கெட்டிங் (Digital Marketing)</option>
+                        <option value="VA & ஆதரவு">VA & ஆதரவு (Support & Others)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="jobDescription" class="block text-lg font-medium text-gray-700">வேலை விளக்கம்</label>
+                    <textarea id="jobDescription" rows="6" placeholder="வேலை என்ன? என்ன திறமைகள் தேவை? டெலிவரி தேதி என்ன?" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="jobBudget" class="block text-lg font-medium text-gray-700">மொத்த பட்ஜெட் (LKR)</label>
+                        <input id="jobBudget" type="number" placeholder="எ.கா: 15000" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                        <p class="mt-1 text-sm text-gray-500">இதுவே நீங்கள் மொத்தமாக ஃப்ரீலான்சருக்கு அளிக்கும் தொகை.</p>
+                    </div>
+                    <div>
+                        <label for="jobDuration" class="block text-lg font-medium text-gray-700">வேலை காலம் (நாட்கள்)</label>
+                        <input id="jobDuration" type="number" placeholder="எ.கா: 7" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                        <p class="mt-1 text-sm text-gray-500">திட்டத்தை முடிக்க எதிர்பார்க்கப்படும் நாட்கள்.</p>
+                    </div>
+                </div>
+
+                <p id="messageBox" class="text-sm font-medium text-center text-red-600 h-5"></p>
+
+                <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150">
+                    வேலையை வெளியிடவும்
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Config (Please make sure this is your config!)
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyDD755-oGyx0hwrLykhF7m2k1uWFnLFMDQ",
+            authDomain: "vorliyo.firebaseapp.com",
+            projectId: "vorliyo",
+            storageBucket: "vorliyo.firebasestorage.app",
+            messagingSenderId: "480604417883",
+            appId: "1:480604417883:web:5b4926a2a1b21f3ae2747e",
+        };
+        
+        const firebaseConfig = FIREBASE_CONFIG;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'vorliyo-default-app-id';
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        let currentUser = null;
+        let userProfile = null;
+        
+        const getProfileDocRef = (uid) => doc(db, 'artifacts', appId, 'users', uid, 'profile', uid);
+        const PUBLIC_JOBS_COLLECTION = collection(db, 'artifacts', appId, 'public', 'data', 'jobs');
+
+        // --- AUTH & PROFILE CHECK ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                fetchUserProfile(user.uid);
+            } else {
+                // Not logged in: Redirect to login page
+                alert("வேலையை வெளியிட நீங்கள் உள்நுழைய வேண்டும்.");
+                window.location.href = 'user-login.html';
+            }
+        });
+
+        async function fetchUserProfile(uid) {
+            const docRef = getProfileDocRef(uid);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                userProfile = docSnap.data();
+                // Check if user is a client (or both, but primarily client to post a job)
+                if (userProfile.userType !== 'client' && userProfile.userType !== 'freelancer') {
+                     // Technically, a freelancer can also post a job, so we allow both types
+                }
+            } else {
+                alert("உங்கள் சுயவிவரத் தகவல் முழுமையாக இல்லை. டாஷ்போர்டுக்குச் செல்கிறது.");
+                window.location.href = 'user-dashboard.html';
+            }
+        }
+
+        // --- FORM SUBMISSION ---
+        document.getElementById('postJobForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!currentUser || !userProfile) {
+                document.getElementById('messageBox').textContent = 'தயவுசெய்து முதலில் உள்நுழையவும்.';
+                return;
+            }
+            
+            const jobTitle = document.getElementById('jobTitle').value;
+            const jobCategory = document.getElementById('jobCategory').value;
+            const jobDescription = document.getElementById('jobDescription').value;
+            const jobBudget = parseFloat(document.getElementById('jobBudget').value);
+            const jobDuration = parseInt(document.getElementById('jobDuration').value, 10);
+            const msgBox = document.getElementById('messageBox');
+            
+            msgBox.textContent = 'வேலையைச் சமர்ப்பிக்கிறது...';
+
+            const newJob = {
+                clientId: currentUser.uid,
+                clientName: userProfile.name || currentUser.displayName,
+                title: jobTitle,
+                category: jobCategory,
+                description: jobDescription,
+                budget: jobBudget,
+                durationDays: jobDuration,
+                status: 'Open', // Job is initially open
+                proposalsCount: 0,
+                createdAt: new Date(),
+            };
+
+            try {
+                await addDoc(PUBLIC_JOBS_COLLECTION, newJob);
+                
+                msgBox.textContent = 'வேலை வெற்றிகரமாக வெளியிடப்பட்டது! டாஷ்போர்டுக்குச் செல்கிறது...';
+                msgBox.classList.remove('text-red-600');
+                msgBox.classList.add('text-green-600');
+                
+                setTimeout(() => {
+                    window.location.href = 'user-dashboard.html';
+                }, 1500);
+
+            } catch (error) {
+                console.error("Error posting job:", error);
+                msgBox.textContent = 'வேலையை வெளியிடுவதில் பிழை ஏற்பட்டது.';
+                msgBox.classList.remove('text-green-600');
+                msgBox.classList.add('text-red-600');
+            }
+        });
+
+        lucide.createIcons();
+    </script>
+</body>
+</html>
+```eof
+
+### ➡️ அடுத்த படி (Next Step)
+
+சஹான், இப்போது நீங்கள் செய்ய வேண்டியது:
+
+1.  உங்கள் **`vorliyo`** களஞ்சியத்தின் **Root-இல்** (நேரடியாக) **`user-post-job.html`** என்ற கோப்பை உருவாக்கி, மேலே உள்ள முழுமையான குறியீட்டையும் **பதிவேற்றவும்**.
+2.  பதிவேற்றம் முடிந்ததும், **"சரி (OK)"** என்று எனக்குத் தெரிவிக்கவும்.
+
+அதன் பிறகு, நாம் **ஃப்ரீலான்சர் சேவை வெளியீட்டுப் பக்கத்தை** (`user-post-service.html`) உருவாக்கலாம்.
