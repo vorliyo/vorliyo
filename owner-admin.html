@@ -1,0 +1,291 @@
+<!--
+  Vorliyo: Freelance Platform - Owner Site (நிர்வாகத் தளம்)
+  File: owner-admin.html (ROOT FILE)
+  Developer: Sahan (Owner)
+  
+  இந்த பக்கம் சகான் (Owner) மட்டுமே உள்நுழைந்து தளத் தரவுகளை நிர்வகிக்க.
+-->
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vorliyo - நிர்வாக டாஷ்போர்டு</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        /* Style for the fixed owner login form */
+        #ownerLoginForm {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- Owner Login Form (Modal) -->
+    <div id="ownerLoginForm" class="flex items-center justify-center">
+        <div class="w-full max-w-sm p-8 space-y-4 bg-white rounded-xl shadow-2xl border-t-4 border-red-600">
+            <h2 class="text-2xl font-bold text-center text-gray-900">Owner Login</h2>
+            <p class="text-center text-red-500">சஹான், நீங்கள் மட்டுமே உள்நுழைய முடியும்.</p>
+            <form id="adminAuthForm" class="space-y-4">
+                <div>
+                    <label for="adminEmail" class="block text-sm font-medium text-gray-700">மின்னஞ்சல்</label>
+                    <!-- Owner's fixed email address for safety -->
+                    <input id="adminEmail" type="email" value="vorliyopro@gmail.com" disabled class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-200">
+                </div>
+                <div>
+                    <label for="adminPassword" class="block text-sm font-medium text-gray-700">கடவுச்சொல்</label>
+                    <input id="adminPassword" type="password" placeholder="உங்கள் கடவுச்சொல்லை உள்ளிடவும்" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <p id="adminMessage" class="text-sm font-medium text-center text-red-600 h-5"></p>
+                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-md font-medium text-white bg-red-600 hover:bg-red-700 transition duration-150">
+                    உள்நுழைய
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Navbar (Hidden until logged in) -->
+    <header id="adminHeader" class="bg-white shadow-md hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+            <h1 class="text-3xl font-extrabold text-red-600 tracking-tight">Vorliyo Admin</h1>
+            <button onclick="handleSignOut()" class="text-red-600 hover:text-red-800 flex items-center p-2 rounded-lg border border-red-300 hover:bg-red-50">
+                <span data-lucide="log-out" class="w-5 h-5 mr-1"></span> வெளியேற
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content (Hidden until logged in) -->
+    <main id="adminMain" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 hidden">
+        <h1 class="text-3xl font-extrabold text-gray-900 mb-8">நிர்வாக டாஷ்போர்டு</h1>
+        
+        <!-- Tabs -->
+        <div class="mb-6 border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8" id="adminTabs">
+                <button onclick="showTab('jobs')" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg border-red-500 text-red-600" data-tab="jobs">
+                    வேலைகள் & முன்மொழிவுகள்
+                </button>
+                <button onclick="showTab('services')" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700" data-tab="services">
+                    ஃப்ரீலான்ஸ் சேவைகள் (Gigs)
+                </button>
+            </nav>
+        </div>
+
+        <!-- 1. Jobs & Proposals Tab Content -->
+        <div id="jobsTab" class="tab-content">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">வேலைப் பட்டியல்கள்</h2>
+            <div id="jobList" class="bg-white p-6 rounded-xl shadow-lg grid grid-cols-1 gap-4 mb-8">
+                 <p class="text-center text-gray-500">வேலைத் தரவு ஏற்றப்படுகிறது...</p>
+            </div>
+            
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 mt-6">அனைத்து முன்மொழிவுகளும் (Proposals)</h2>
+            <div id="proposalList" class="bg-white p-6 rounded-xl shadow-lg grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <p class="text-center text-gray-500 col-span-full">முன்மொழிவுத் தரவு ஏற்றப்படுகிறது...</p>
+            </div>
+        </div>
+
+        <!-- 2. Services Tab Content -->
+        <div id="servicesTab" class="tab-content hidden">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">அனைத்து ஃப்ரீலான்ஸ் சேவைகளும் (Gigs)</h2>
+            <div id="serviceList" class="bg-white p-6 rounded-xl shadow-lg grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <p class="text-center text-gray-500 col-span-full">சேவை தரவு ஏற்றப்படுகிறது...</p>
+            </div>
+        </div>
+        
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
+            <p>&copy; 2024 Vorliyo Admin. சகான் உருவாக்கிய தளம்.</p>
+        </div>
+    </footer>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, onSnapshot, getDocs, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Config (Please make sure this is your config!)
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyDD755-oGyx0hwrLykhF7m2k1uWFnLFMDQ",
+            authDomain: "vorliyo.firebaseapp.com",
+            projectId: "vorliyo",
+            storageBucket: "vorliyo.firebasestorage.app",
+            messagingSenderId: "480604417883",
+            appId: "1:480604417883:web:5b4926a2a1b21f3ae2747e",
+        };
+        
+        const firebaseConfig = FIREBASE_CONFIG;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'vorliyo-default-app-id';
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        const ADMIN_EMAIL = 'vorliyopro@gmail.com';
+        
+        // Firestore Path Helpers
+        const PUBLIC_JOBS_COLLECTION = collection(db, 'artifacts', appId, 'public', 'data', 'jobs');
+        const PUBLIC_SERVICES_COLLECTION = collection(db, 'artifacts', appId, 'public', 'data', 'services');
+        const PROPOSALS_COLLECTION = collection(db, 'artifacts', appId, 'public', 'data', 'proposals');
+
+        // --- ADMIN AUTHENTICATION ---
+        document.getElementById('adminAuthForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            const msgBox = document.getElementById('adminMessage');
+            
+            if (email !== ADMIN_EMAIL) {
+                msgBox.textContent = 'இது நிர்வாக மின்னஞ்சல் அல்ல.';
+                return;
+            }
+            
+            msgBox.textContent = 'உள்நுழைகிறது...';
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                console.error("Admin Login Error:", error);
+                msgBox.textContent = 'தவறான கடவுச்சொல். மீண்டும் முயற்சிக்கவும்.';
+            }
+        });
+
+        // --- AUTH STATE MANAGEMENT ---
+        onAuthStateChanged(auth, (user) => {
+            if (user && user.email === ADMIN_EMAIL) {
+                // Admin is signed in
+                document.getElementById('ownerLoginForm').classList.add('hidden');
+                document.getElementById('adminHeader').classList.remove('hidden');
+                document.getElementById('adminMain').classList.remove('hidden');
+                fetchDataListeners(); // Start fetching data
+            } else {
+                // Not the admin
+                document.getElementById('ownerLoginForm').classList.remove('hidden');
+                document.getElementById('adminHeader').classList.add('hidden');
+                document.getElementById('adminMain').classList.add('hidden');
+                if (user) signOut(auth); // Sign out any non-admin users who landed here
+            }
+        });
+
+        window.handleSignOut = () => {
+            signOut(auth).then(() => {
+                window.location.reload(); 
+            });
+        }
+        
+        // --- TABS MANAGEMENT ---
+        window.showTab = (tabName) => {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('border-red-500', 'text-red-600');
+                btn.classList.add('border-transparent', 'text-gray-500', 'hover:border-gray-300', 'hover:text-gray-700');
+            });
+            
+            document.getElementById(tabName + 'Tab').classList.remove('hidden');
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('border-red-500', 'text-red-600');
+            document.querySelector(`[data-tab="${tabName}"]`).classList.remove('border-transparent', 'text-gray-500', 'hover:border-gray-300', 'hover:text-gray-700');
+            lucide.createIcons();
+        }
+
+        // --- DATA FETCHING (Admin Mode) ---
+        function fetchDataListeners() {
+            listenToJobs();
+            listenToProposals();
+            listenToServices();
+        }
+        
+        // 1. Listen to all Jobs
+        function listenToJobs() {
+            const list = document.getElementById('jobList');
+            onSnapshot(query(PUBLIC_JOBS_COLLECTION), (snapshot) => {
+                const jobs = [];
+                snapshot.forEach((doc) => {
+                    jobs.push({ id: doc.id, ...doc.data() });
+                });
+                renderAdminJobs(jobs, list);
+            }, (error) => { console.error("Error fetching admin jobs:", error); });
+        }
+        
+        function renderAdminJobs(jobs, list) {
+             if (jobs.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-500">வேலைப் பட்டியல்கள் எதுவும் இல்லை.</p>';
+                return;
+            }
+            list.innerHTML = jobs.map(job => `
+                <div class="bg-white p-4 rounded-xl shadow-md border-l-4 border-green-500">
+                    <h4 class="text-lg font-bold text-gray-900">${job.title}</h4>
+                    <p class="text-sm text-gray-600 mb-1">**Client:** ${job.clientName} | **Budget:** LKR ${job.budget} | **Duration:** ${job.durationDays} days</p>
+                    <p class="text-xs italic text-gray-500 truncate">${job.description.substring(0, 100)}...</p>
+                </div>
+            `).join('');
+        }
+
+        // 2. Listen to all Proposals
+        function listenToProposals() {
+            const list = document.getElementById('proposalList');
+            onSnapshot(query(PROPOSALS_COLLECTION), (snapshot) => {
+                const proposals = [];
+                snapshot.forEach((doc) => {
+                    proposals.push({ id: doc.id, ...doc.data() });
+                });
+                renderAdminProposals(proposals, list);
+            }, (error) => { console.error("Error fetching admin proposals:", error); });
+        }
+        
+        function renderAdminProposals(proposals, list) {
+            if (proposals.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-500 col-span-full">சமர்ப்பிக்கப்பட்ட முன்மொழிவுகள் எதுவும் இல்லை.</p>';
+                return;
+            }
+            list.innerHTML = proposals.map(p => `
+                <div class="bg-white p-4 rounded-xl shadow-md border-l-4 border-indigo-500">
+                    <h4 class="text-lg font-bold text-gray-900">Proposal for Job ID: ${p.jobId.substring(0, 8)}...</h4>
+                    <p class="text-sm text-gray-600 mb-1">**Freelancer:** ${p.freelancerName} | **Price:** LKR ${p.proposalPrice}</p>
+                    <p class="text-xs italic text-gray-500 truncate">Cover Letter: ${p.coverLetter.substring(0, 50)}...</p>
+                </div>
+            `).join('');
+        }
+
+        // 3. Listen to all Services
+        function listenToServices() {
+            const list = document.getElementById('serviceList');
+            onSnapshot(query(PUBLIC_SERVICES_COLLECTION), (snapshot) => {
+                const services = [];
+                snapshot.forEach((doc) => {
+                    services.push({ id: doc.id, ...doc.data() });
+                });
+                renderAdminServices(services, list);
+            }, (error) => { console.error("Error fetching admin services:", error); });
+        }
+        
+        function renderAdminServices(services, list) {
+            if (services.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-500 col-span-full">வெளியிடப்பட்ட சேவைகள் எதுவும் இல்லை.</p>';
+                return;
+            }
+            list.innerHTML = services.map(s => `
+                <div class="bg-white p-4 rounded-xl shadow-md border-l-4 border-yellow-500">
+                    <h4 class="text-lg font-bold text-gray-900">${s.title}</h4>
+                    <p class="text-sm text-gray-600 mb-1">**Freelancer:** ${s.freelancerName} | **Price:** LKR ${s.price}/hr</p>
+                    <p class="text-xs italic text-gray-500 truncate">${s.description.substring(0, 50)}...</p>
+                </div>
+            `).join('');
+        }
+
+        lucide.createIcons(); // Initialize icons on load
+        
+    </script>
+</body>
+</html>
