@@ -1,0 +1,299 @@
+<!--
+  Vorliyo: Freelance Platform - Index Page
+  File: user-index.html (ROOT FILE)
+  FIX: Added overflow-x-auto to navigation tabs.
+-->
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vorliyo - ஃப்ரீலான்ஸ் தளம்</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- Navbar -->
+    <header class="bg-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+            <a href="user-index.html" class="text-3xl font-extrabold text-indigo-600 tracking-tight">Vorliyo</a>
+            <div class="flex items-center space-x-4">
+                <a href="user-login.html" class="text-gray-600 hover:text-indigo-600">உள்நுழைய</a>
+                <a href="user-dashboard.html" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 hidden" id="dashboardLink">டாஷ்போர்டு</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Global Notice -->
+        <div id="globalNoticeBox" class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 hidden" role="alert">
+            <p class="font-bold">அறிவிப்பு:</p>
+            <p id="globalNoticeText"></p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="bg-white p-6 rounded-xl shadow-2xl mb-8">
+            <h1 class="text-4xl font-extrabold text-gray-900 mb-4 text-center">தேடுவதைத் தொடங்குங்கள்</h1>
+             <div class="flex items-center space-x-2">
+                <div class="relative flex-grow">
+                    <span data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"></span>
+                    <input id="searchInput" type="text" placeholder="எ.கா: லோகோ வடிவமைப்பு, வெப் டெவலப்மென்ட்..." class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <button onclick="handleSearch()" class="bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition duration-150">தேட</button>
+            </div>
+        </div>
+
+        <!-- Job/Service List Selector Tabs -->
+        <div class="mb-6 border-b border-gray-200">
+            <!-- FIX: Added overflow-x-auto and whitespace-nowrap for mobile compatibility -->
+            <nav class="-mb-px flex space-x-8 overflow-x-auto whitespace-nowrap" id="listTabs">
+                <button onclick="changeListType('jobs')" id="tabJobs" class="py-4 px-1 border-b-2 font-medium text-lg border-indigo-500 text-indigo-600" data-list="jobs">
+                    வேலைப் பட்டியல்கள் (Upwork Style)
+                </button>
+                <button onclick="changeListType('services')" id="tabServices" class="py-4 px-1 border-b-2 font-medium text-lg border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700" data-list="services">
+                    ஃப்ரீலான்ஸ் சேவைகள் (Fiverr Style)
+                </button>
+            </nav>
+        </div>
+
+        <!-- Job List (Default View) -->
+        <div id="jobListContent">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">புதிய வேலை வாய்ப்புகள்</h2>
+            <p id="jobLoadingIndicator" class="text-center text-lg text-indigo-500 font-semibold">வேலைப் பட்டியல்களைப் பெறுகிறது...</p>
+            <div id="jobList" class="grid grid-cols-1 gap-6">
+                <!-- Jobs will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Service List (Hidden Default) -->
+        <div id="serviceListContent" class="hidden">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">சிறந்த ஃப்ரீலான்ஸ் சேவைகள்</h2>
+            <p id="serviceLoadingIndicator" class="text-center text-lg text-indigo-500 font-semibold">சேவைகளைப் பெறுகிறது...</p>
+            <!-- FIX: Changed grid-cols-1 to grid-cols-2 on medium screens for better use of space -->
+            <div id="serviceList" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Services (Gigs) will be rendered here -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
+            <p>&copy; 2024 Vorliyo.sahan. <a href="owner-admin.html" class="text-red-400 underline ml-2">Admin Login</a></p>
+        </div>
+    </footer>
+
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, where, onSnapshot, getDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Config (Please make sure this is your config!)
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyDD755-oGyx0hwrLykhF7m2k1uWFnLFMDQ",
+            authDomain: "vorliyo.firebaseapp.com",
+            projectId: "vorliyo",
+            storageBucket: "vorliyo.firebasestorage.app",
+            messagingSenderId: "480604417883",
+            appId: "1:480604417883:web:5b4926a2a1b21f3ae2747e",
+        };
+        
+        const firebaseConfig = FIREBASE_CONFIG;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'vorliyo-default-app-id';
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        let currentListType = 'jobs';
+
+        // Firestore Path Helpers
+        const PUBLIC_JOBS_COLLECTION = collection(db, 'artifacts', appId, 'public', 'data', 'jobs');
+        const PUBLIC_SERVICES_COLLECTION = collection(db, 'artifacts', appId, 'public', 'data', 'services');
+        const SETTINGS_DOC_REF = doc(db, 'artifacts', appId, 'owner', 'data', 'settings', 'global');
+
+
+        // --- INITIAL SETUP ---
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthStatus();
+            listenToJobs();
+            listenToServices();
+            fetchGlobalNotice();
+        });
+
+        function checkAuthStatus() {
+            onAuthStateChanged(auth, (user) => {
+                const dashboardLink = document.getElementById('dashboardLink');
+                const loginLink = document.querySelector('a[href="user-login.html"]');
+                if (user) {
+                    dashboardLink.classList.remove('hidden');
+                    loginLink.classList.add('hidden');
+                } else {
+                    dashboardLink.classList.add('hidden');
+                    loginLink.classList.remove('hidden');
+                }
+            });
+        }
+        
+        // --- GLOBAL NOTICE ---
+        async function fetchGlobalNotice() {
+            try {
+                const docSnap = await getDoc(SETTINGS_DOC_REF);
+                if (docSnap.exists() && docSnap.data().globalNotice) {
+                    document.getElementById('globalNoticeText').textContent = docSnap.data().globalNotice;
+                    document.getElementById('globalNoticeBox').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.warn("Error fetching global notice:", error);
+            }
+        }
+        
+        // --- LIST SWITCHING ---
+        window.changeListType = (type) => {
+            currentListType = type;
+            const jobTab = document.getElementById('tabJobs');
+            const serviceTab = document.getElementById('tabServices');
+            
+            if (type === 'jobs') {
+                document.getElementById('jobListContent').classList.remove('hidden');
+                document.getElementById('serviceListContent').classList.add('hidden');
+                jobTab.classList.remove('border-transparent', 'text-gray-500', 'hover:border-gray-300', 'hover:text-gray-700');
+                jobTab.classList.add('border-indigo-500', 'text-indigo-600');
+                serviceTab.classList.add('border-transparent', 'text-gray-500', 'hover:border-gray-300', 'hover:text-gray-700');
+                serviceTab.classList.remove('border-indigo-500', 'text-indigo-600');
+            } else {
+                document.getElementById('jobListContent').classList.add('hidden');
+                document.getElementById('serviceListContent').classList.remove('hidden');
+                serviceTab.classList.remove('border-transparent', 'text-gray-500', 'hover:border-gray-300', 'hover:text-gray-700');
+                serviceTab.classList.add('border-indigo-500', 'text-indigo-600');
+                jobTab.classList.add('border-transparent', 'text-gray-500', 'hover:border-gray-300', 'hover:text-gray-700');
+                jobTab.classList.remove('border-indigo-500', 'text-indigo-600');
+            }
+        }
+
+        window.handleSearch = () => {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            // Simple filtering logic (re-renders the list)
+            listenToJobs(searchTerm);
+            listenToServices(searchTerm);
+        }
+
+        // --- DATA LISTENERS ---
+
+        // 1. Jobs Listener
+        function listenToJobs(searchTerm = '') {
+            const list = document.getElementById('jobList');
+            const loading = document.getElementById('jobLoadingIndicator');
+            loading.classList.remove('hidden');
+            
+            // Query for 'Open' jobs
+            const q = query(PUBLIC_JOBS_COLLECTION, where("status", "==", "Open"));
+            
+            onSnapshot(q, (snapshot) => {
+                const jobs = [];
+                snapshot.forEach((doc) => {
+                    jobs.push({ id: doc.id, ...doc.data() });
+                });
+                renderJobs(jobs, list, searchTerm);
+                loading.classList.add('hidden');
+            }, (error) => { 
+                console.error("Error fetching jobs:", error); 
+                loading.textContent = 'வேலைப் பட்டியல்களைப் பெற முடியவில்லை.';
+            });
+        }
+        
+        function renderJobs(jobs, list, searchTerm) {
+            let filteredJobs = jobs;
+            if (searchTerm) {
+                 filteredJobs = jobs.filter(job => 
+                    job.title.toLowerCase().includes(searchTerm) || 
+                    job.description.toLowerCase().includes(searchTerm) ||
+                    job.category.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            if (filteredJobs.length === 0) {
+                list.innerHTML = `<p class="text-center text-gray-500 mt-4">வேலை வாய்ப்புகள் எதுவும் இல்லை.</p>`;
+                return;
+            }
+
+            list.innerHTML = filteredJobs.map(job => `
+                <a href="user-job-details.html?id=${job.id}" class="block bg-white p-5 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border-l-4 border-green-500">
+                    <span class="text-sm font-medium bg-green-100 text-green-800 px-3 py-1 rounded-full">${job.category}</span>
+                    <h3 class="text-xl font-bold text-gray-900 mt-3 mb-2">${job.title}</h3>
+                    <p class="text-gray-700 mb-3 line-clamp-2">${job.description.substring(0, 150)}...</p>
+                    <div class="flex justify-between items-center text-sm text-gray-600">
+                        <p class="font-semibold text-green-700">Budget: LKR ${job.budget.toLocaleString()}</p>
+                        <p>Duration: ${job.durationDays} days</p>
+                    </div>
+                </a>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // 2. Services Listener
+        function listenToServices(searchTerm = '') {
+             const list = document.getElementById('serviceList');
+             const loading = document.getElementById('serviceLoadingIndicator');
+             loading.classList.remove('hidden');
+             
+             // Query for 'Active' services
+             const q = query(PUBLIC_SERVICES_COLLECTION, where("status", "==", "Active"));
+            
+             onSnapshot(q, (snapshot) => {
+                const services = [];
+                snapshot.forEach((doc) => {
+                    services.push({ id: doc.id, ...doc.data() });
+                });
+                renderServices(services, list, searchTerm);
+                loading.classList.add('hidden');
+            }, (error) => { 
+                console.error("Error fetching services:", error); 
+                loading.textContent = 'சேவைகளைப் பெற முடியவில்லை.';
+            });
+        }
+        
+        function renderServices(services, list, searchTerm) {
+            let filteredServices = services;
+             if (searchTerm) {
+                 filteredServices = services.filter(service => 
+                    service.title.toLowerCase().includes(searchTerm) || 
+                    service.description.toLowerCase().includes(searchTerm) ||
+                    service.category.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            if (filteredServices.length === 0) {
+                list.innerHTML = `<p class="text-center text-gray-500 col-span-full mt-4">சேவைகள் எதுவும் இல்லை.</p>`;
+                return;
+            }
+
+            list.innerHTML = filteredServices.map(service => `
+                 <a href="user-service-details.html?id=${service.id}" class="block bg-white p-5 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border-l-4 border-indigo-500">
+                    <span class="text-sm font-medium bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full">${service.category}</span>
+                    <h3 class="text-xl font-bold text-gray-900 mt-3 mb-2 line-clamp-2">${service.title}</h3>
+                    <p class="text-gray-600 text-sm mb-3">By: ${service.freelancerName}</p>
+                    <div class="flex justify-between items-center text-sm text-gray-600 pt-2 border-t">
+                        <p class="font-semibold text-green-700">Starts at LKR ${service.price.toLocaleString()}/hr</p>
+                        <p>Delivery: ${service.deliveryDays} days</p>
+                    </div>
+                </a>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        lucide.createIcons();
+    </script>
+</body>
+  </html>
