@@ -28,6 +28,13 @@
         <p id="authMessage" class="text-red-600 font-semibold mb-6">
              (Owner Login required - vorliyopro@gmail.com)
         </p>
+        
+        <div id="loginPrompt" class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded hidden">
+            <p class="font-bold">அட்மின் உள்நுழைவு தேவை:</p>
+            <p>நிர்வாகப் பக்கங்களைப் பார்க்க, <a href="user-login.html" class="text-yellow-800 underline font-semibold">இங்கே கிளிக் செய்து</a>, Owner மின்னஞ்சல்/கடவுச்சொல்லைப் பயன்படுத்தி உள்நுழையவும்.</p>
+            <p class="text-sm mt-1">மின்னஞ்சல்: **vorliyopro@gmail.com**</p>
+        </div>
+
 
         <div id="adminContent" class="hidden space-y-8">
             
@@ -82,14 +89,14 @@
                  </div>
             </div>
 
-            </div>
+        </div>
     </main>
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         
-        // Firebase Config (Please make sure this is your config!)
+        // ********** உங்கள் Firebase Config-ஐ இங்கே மாற்றவும்! **********
         const FIREBASE_CONFIG = {
             apiKey: "AIzaSyDD755-oGyx0hwrLykhF7m2k1uWFnLFMDQ",
             authDomain: "vorliyo.firebaseapp.com",
@@ -111,30 +118,32 @@
         onAuthStateChanged(auth, (user) => {
             const authMessage = document.getElementById('authMessage');
             const adminContent = document.getElementById('adminContent');
+            const loginPrompt = document.getElementById('loginPrompt');
             
             if (user && user.email === ADMIN_EMAIL) {
+                // Logged in as Admin
                 authMessage.textContent = `உள்நுழைந்தது: ${user.email} (Owner)`;
                 authMessage.classList.remove('text-red-600');
                 authMessage.classList.add('text-green-600');
                 adminContent.classList.remove('hidden');
+                loginPrompt.classList.add('hidden');
             } else {
+                // Not Admin or Not Logged in
                 authMessage.textContent = 'அனுமதி மறுக்கப்பட்டது. நீங்கள் Owner ஆக உள்நுழைய வேண்டும்.';
                 adminContent.classList.add('hidden');
-                // Auto-redirect if not logged in or wrong user
-                if (!user) {
-                     // We don't redirect here, just show the login form, as this is the login landing page
-                } else if (user.email !== ADMIN_EMAIL) {
-                     alert("Unauthorized account. Redirecting to user site.");
-                     signOut(auth).then(() => {
-                        window.location.href = './user-index.html';
-                     });
+                loginPrompt.classList.remove('hidden');
+                
+                if (user && user.email !== ADMIN_EMAIL) {
+                     // Logged in as a regular user, automatically sign them out and show the prompt
+                     alert("Unauthorized account. Signing out and directing to Admin Login prompt.");
+                     signOut(auth);
+                     // The onAuthStateChanged listener will fire again, catching the signed-out state and showing the prompt.
                 }
             }
         });
 
         window.handleSignOut = () => {
             signOut(auth).then(() => {
-                // FIX: Use relative path
                 window.location.href = './owner-admin.html';
             }).catch((error) => {
                 console.error("Sign Out Error:", error);
@@ -145,4 +154,14 @@
     </script>
 </body>
 </html>
-```
+```eof
+
+### ➡️ அடுத்த படி (Next Step)
+
+சஹான், இப்போது நீங்கள் செய்ய வேண்டியவை:
+
+1.  மேலே உள்ள குறியீட்டில், உங்கள் **சரியான `FIREBASE_CONFIG`** உள்ளதா என உறுதி செய்யவும்.
+2.  திருத்தப்பட்ட இந்த **`owner-admin.html`** கோப்பை உங்கள் GitHub-இல் மாற்றிப் பதிவேற்றவும்.
+3.  உங்கள் மொபைல் உலாவியின் Cache-ஐ அழித்துவிட்டு, தளத்தைத் திறந்து, **Admin Login**-ஐ (user-login.html வழியாக) முயற்சிக்கவும்.
+
+இந்தத் திருத்தத்திற்குப் பிறகு Admin Login சரியாக வேலை செய்ய வேண்டும். பதிவேற்றம் முடிந்ததும் எனக்குத் தெரியப்படுத்தவும்.
